@@ -7,6 +7,7 @@
 #include "AdvancedAnticheatMgr.h"
 
 #include "Chat.h"
+#include "DatabaseEnv.h"
 #include "Language.h"
 #include "MapManager.h"
 #include "ObjectAccessor.h"
@@ -52,14 +53,14 @@ template <ReportTypes type>
 void AnticheatCheckBase<type>::HackReport(Player* player, AdvancedAnticheatData* playerData) const
 {
     bool sendReport = false;
-    uint32 reportDelay = sWorld->getIntConfig(CONFIG_ANTICHEAT_PLAYER_REPORT_DELAY);
+    uint32 reportDelay = sWorld->getIntConfig(CONFIG_ADVANCED_ANTICHEAT_PLAYER_REPORT_DELAY);
 
     if (type != REPORT_PLAYER_TYPE_JUMP)
     {
         uint32 actualTime = getMSTime();
 
-        if (!playerData->GetTempReportsTimer(type))
-            playerData->GetTempReportsTimer(actualTime, type);
+        /*if (!playerData->GetTempReportsTimer(type))
+            playerData->GetTempReportsTimer(actualTime, type);*/
 
         if (!playerData->GetLastReportTimer())
             playerData->SetLastReportTimer(actualTime);
@@ -105,7 +106,7 @@ void AnticheatCheckBase<type>::HackReport(Player* player, AdvancedAnticheatData*
             trans->Append(stmt);
 
             uint8 index = 0;
-            stmt->CharacterDatabase.GetPreparedStatement(CHAR_INS_AC_PLAYER_DAILY_REPORTS);
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_AC_PLAYER_DAILY_REPORTS);
             stmt->setUInt32(index, player->GetGUID().GetCounter());
             stmt->setFloat(++index, playerData->GetAverage());
             stmt->setUInt32(++index, playerData->GetTotalReports());
@@ -113,7 +114,7 @@ void AnticheatCheckBase<type>::HackReport(Player* player, AdvancedAnticheatData*
             for (uint8 i = 0; i < MAX_REPORT_PLAYER_TYPES; ++i)
                 stmt->setUInt32(++index, playerData->GetTypeReports(static_cast<ReportTypes>(i)));
 
-            stmt->setUInt32(++index, playerData->GetCreationTime());
+            stmt->setUInt32(++index, playerData->GetReportTime());
             trans->Append(stmt);
 
             CharacterDatabase.CommitTransaction(trans);
@@ -121,12 +122,12 @@ void AnticheatCheckBase<type>::HackReport(Player* player, AdvancedAnticheatData*
         }
     }
 
-    if (sendReport && playerData->GetTotalReports() > sWorld->getIntConfig(CONFIG_ANTICHEAT_REPORTS_INGAME_NOTIFICATION))
+    if (sendReport && playerData->GetTotalReports() > sWorld->getIntConfig(CONFIG_ADVANCED_ANTICHEAT_REPORTS_INGAME_NOTIFICATION))
     {
         playerData->SetLastReportTimer(getMSTime());
 
         WorldPacket buffer;
-        std::string strength = Trinity::StringFormat(sObjectMgr->GetTrinityStringForDBCLocale(LANG_AC_CHEAT_REPORT);
+        std::string strength = Trinity::StringFormat(sObjectMgr->GetTrinityStringForDBCLocale(LANG_AC_CHEAT_REPORT),
             player->GetName().c_str(), player->GetName().c_str());
         ChatHandler::BuildChatPacket(buffer, CHAT_MSG_SYSTEM, LANG_UNIVERSAL, nullptr, nullptr, strength);
         sWorld->SendGlobalGMMessage(&buffer);
