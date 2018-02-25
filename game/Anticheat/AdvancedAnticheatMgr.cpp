@@ -59,8 +59,8 @@ void AnticheatCheckBase<type>::HackReport(Player* player, AdvancedAnticheatData*
     {
         uint32 actualTime = getMSTime();
 
-        /*if (!playerData->GetTempReportsTimer(type))
-            playerData->GetTempReportsTimer(actualTime, type);*/
+        if (!playerData->GetTempReportsTimer(type))
+            playerData->SetTempReportsTimer(actualTime, type);
 
         if (!playerData->GetLastReportTimer())
             playerData->SetLastReportTimer(actualTime);
